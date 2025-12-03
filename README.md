@@ -1,166 +1,168 @@
-# Chainalysis Wallet Fingerprint 🔍
+# Fingerprint Companion (for Chainalysis) 🔍
 
-Estensione Chrome che intercetta le transazioni visualizzate su **Chainalysis Reactor** e analizza automaticamente quale wallet Bitcoin è stato utilizzato per crearle.
+A Chrome extension that intercepts Bitcoin transactions displayed on **Chainalysis Reactor** and automatically analyzes which wallet software was used to create them.
 
-## ✨ Funzionalità
+![Fingerprints Table](images/fingerprints_final.png)
 
-- 🔄 **Intercettazione automatica** delle transazioni dalla API di Chainalysis
-- 🔍 **Analisi con un click** direttamente nella pagina
-- 📊 **Visualizzazione percentuali** dei wallet identificati
-- 🔗 **Link a mempool.space** per ogni transazione
-- 🎨 **UI moderna** con tema Bitcoin
+## ✨ Features
 
-## 🚀 Installazione
+- 🔄 **Automatic interception** of transactions from Chainalysis API
+- 🔍 **One-click analysis** directly on the page
+- 📊 **Percentage visualization** of identified wallets
+- 🔗 **Links to mempool.space** for each transaction
+- 🎨 **Modern UI** with light/dark themes
+- 🌍 **Multi-language support** (English & Italian)
+- 💾 **Smart caching** to avoid duplicate API requests
+- 📈 **Full analysis page** with detailed transaction breakdown
+
+## 🚀 Installation
 
 ### Chrome / Brave / Edge
 
-1. Scarica o clona questo repository:
+1. Clone this repository:
    ```bash
-   git clone https://github.com/tuouser/chainalysis-wallet-fingerprint.git
+   git clone https://github.com/user/chainalysis-wallet-fingerprint.git
    ```
 
-2. Apri il browser e vai su:
+2. Open your browser and navigate to:
    - Chrome: `chrome://extensions/`
    - Brave: `brave://extensions/`
    - Edge: `edge://extensions/`
 
-3. Attiva la **Modalità sviluppatore** (toggle in alto a destra)
+3. Enable **Developer Mode** (toggle in the top right)
 
-4. Clicca su **Carica estensione non pacchettizzata**
+4. Click **Load unpacked**
 
-5. Seleziona la cartella del repository
+5. Select the repository folder
 
-6. L'estensione apparirà nella barra degli strumenti con l'icona 🔍
+6. The extension will appear in your toolbar with a fingerprint icon
 
-## 📖 Come Usare
+## 📖 How to Use
 
-1. **Accedi a Chainalysis Reactor** (`reactor.chainalysis.com`)
+1. **Access Chainalysis Reactor** (`reactor.chainalysis.com`)
 
-2. **Naviga** verso un'entità o indirizzo Bitcoin
+2. **Navigate** to a Bitcoin entity or address
 
-3. **Clicca** sull'entità per vedere i trasferimenti
+3. **Click** on a cluster to view transfers
 
-4. L'estensione **intercetta automaticamente** le transazioni dalla risposta API
+4. The extension **automatically intercepts** outgoing transactions
 
-5. **Clicca sul pulsante 🔍** che appare in basso a destra della pagina
+5. **Click the fingerprint button** at the bottom left of the page
 
-6. **Premi "Analizza Wallet"** per avviare l'analisi
+6. For clusters with ≤50 transactions, analysis starts automatically
+   - For larger clusters, press **"Analyze Fingerprint"**
 
-7. Visualizza i **risultati** con le percentuali dei wallet identificati
+7. View **results** with wallet percentages and detailed reasoning
 
-## 🔬 Come Funziona
+## 🔬 How It Works
 
-### Intercettazione
+### Interception
 
-L'estensione intercetta le chiamate API di Chainalysis che hanno questo formato:
+The extension intercepts Chainalysis API calls in this format:
 ```
 https://reactor.chainalysis.com/api/v2/cluster/.../transfers
 ```
 
-La risposta contiene gli hash delle transazioni:
-```json
-[
-  {
-    "hash": "00b80f122329d7332382297d39184cb56f70d06213c73c5ab00c5d3f5a783140",
-    "datetime": 1620684473,
-    "valueFp": "1.173977",
-    ...
-  }
-]
-```
+### Analysis
 
-### Analisi
+For each transaction hash:
+1. Fetches complete details from **mempool.space** API
+2. Analyzes transaction characteristics
+3. Applies fingerprinting heuristics
+4. Identifies the most likely wallet
 
-Per ogni hash di transazione:
-1. Recupera i dettagli completi da **mempool.space** API (gratuita)
-2. Analizza le caratteristiche della transazione
-3. Applica le euristiche di fingerprinting
-4. Identifica il wallet più probabile
+### Heuristics Used
 
-### Euristiche Utilizzate
+| Criterion | Description |
+|-----------|-------------|
+| **Anti-fee-sniping** | Locktime set to current block height |
+| **nVersion** | Transaction version (1 or 2) |
+| **Low-R grinding** | Signatures optimized for smaller size |
+| **RBF signaling** | Replace-By-Fee opt-in |
+| **Script types** | P2PKH, P2WPKH, P2TR, etc. |
+| **BIP-69 ordering** | Lexicographical input/output sorting |
+| **Address reuse** | Change sent to previously used address |
+| **Change position** | First, last, or random output index |
 
-- **Anti-fee-sniping** (locktime)
-- **nVersion** della transazione (1 o 2)
-- **Low-r signature grinding**
-- **RBF signaling**
-- **Tipi di input/output** (P2PKH, P2WPKH, P2TR, etc.)
-- **Ordinamento BIP-69**
-- **Riutilizzo degli indirizzi**
-- **Posizione del change output**
+## 🎯 Supported Wallets
 
-## 🎯 Wallet Supportati
+| Wallet | Key Characteristics |
+|--------|---------------------|
+| **Bitcoin Core** | Anti-fee-sniping, nVersion=2, low-R, RBF |
+| **Electrum** | Anti-fee-sniping, BIP-69, nVersion=2 |
+| **Blue Wallet** | nVersion=2, RBF, change last |
+| **Coinbase Wallet** | nVersion=2, no RBF, max 2 outputs |
+| **Exodus** | nVersion=2, no RBF, address reuse |
+| **Trust Wallet** | nVersion=1, no RBF |
+| **Trezor** | nVersion=1, BIP-69, RBF |
+| **Ledger** | nVersion=1, RBF, change last |
 
-| Icona | Wallet | Caratteristiche Chiave |
-|-------|--------|----------------------|
-| 🟠 | Bitcoin Core | Anti-fee-sniping, nVersion=2, low-r, RBF |
-| ⚡ | Electrum | Anti-fee-sniping, BIP-69, nVersion=2 |
-| 🔵 | Blue Wallet | nVersion=2, RBF, change last |
-| 🔷 | Coinbase | nVersion=2, no RBF |
-| 🟣 | Exodus | nVersion=2, no RBF, address reuse |
-| 🛡️ | Trust | nVersion=1 |
-| 🔒 | Trezor | nVersion=1, BIP-69 |
-| 📟 | Ledger | nVersion=1, historical order |
+![Block Analysis](images/block_807929_graph.png)
 
-## 📁 Struttura File
+## 📁 Project Structure
 
 ```
 chainalysis-wallet-fingerprint/
-├── manifest.json      # Configurazione estensione (Manifest V3)
-├── background.js      # Service worker (intercetta & analizza)
-├── content.js         # Script iniettato nella pagina
-├── styles.css         # Stili del pannello UI
-├── popup.html         # Popup dell'estensione
-├── popup.js           # Logica popup
-├── icons/             # Icone (16, 48, 128 px)
-│   ├── icon.svg
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
-└── README.md          # Documentazione
+├── manifest.json      # Extension config (Manifest V3)
+├── background.js      # Service worker (intercept & analyze)
+├── content.js         # Injected page script
+├── injected.js        # Main world script for API interception
+├── styles.css         # UI styles
+├── popup.html/js      # Extension popup
+├── analysis.html/js   # Full analysis page
+├── docs.html/js       # Documentation page
+├── i18n.js            # Translations (EN/IT)
+├── icons/             # Extension & wallet icons
+├── images/            # Documentation images
+└── README.md          # Documentation
 ```
 
-## ⚠️ Privacy & Sicurezza
+## ⚠️ Privacy & Security
 
-- ✅ L'estensione **non invia dati** a server esterni (eccetto mempool.space per i dati delle transazioni)
-- ✅ Tutte le analisi avvengono **localmente** nel browser
-- ✅ Non vengono salvati dati su disco
-- ✅ L'estensione funziona **solo** su `reactor.chainalysis.com`
-- ✅ Codice **open source** e verificabile
+- ✅ **No data sent** to external servers (except mempool.space for transaction data)
+- ✅ All analysis happens **locally** in the browser
+- ✅ Results cached in **local storage** only
+- ✅ Extension works **only** on `reactor.chainalysis.com`
+- ✅ **Open source** and auditable code
 
-## 🐛 Debug
+## 🐛 Debugging
 
-Apri la console sviluppatori (F12) su Chainalysis per vedere i log:
+Open developer console (F12) on Chainalysis to see logs:
 ```
-[BTC Fingerprint] Intercettate transazioni: 25
-[BTC Fingerprint] Extension caricata
+[Fingerprint Companion] 📨 Received outgoing transactions: 25
+[Fingerprint Companion] ✅ Analysis complete: Bitcoin Core
 ```
 
-Per debug del background script:
-1. Vai su `chrome://extensions/`
-2. Trova l'estensione
-3. Clicca su "Service worker" per aprire DevTools
+For background script debugging:
+1. Go to `chrome://extensions/`
+2. Find the extension
+3. Click "Service worker" to open DevTools
 
-## 📝 Note
+## 📚 Sources & References
 
-- Richiede accesso a **Chainalysis Reactor** (account necessario)
-- Le transazioni vengono analizzate una alla volta per evitare rate limiting
-- I risultati sono **probabilistici**, non deterministici
-- Wallet personalizzati o non standard potrebbero essere classificati come "Other"
+This extension is based on the excellent research by **Ishaana**:
 
-## 🔗 Progetti Correlati
+> **[Wallet Fingerprints: Detection & Analysis](https://ishaana.com/blog/wallet_fingerprinting/)**
+> 
+> Comprehensive analysis of wallet fingerprints and automated detection methodology. By implementing a few heuristics, about 50% of recent transactions can be attributed to their originating wallet.
 
-- [bitcoin-fingerprint](https://github.com/tuouser/bitcoin-fingerprint) - Tool Python per l'analisi da linea di comando
-
-## 📚 Risorse
+### Additional Resources
 
 - [Bitcoin Privacy Wiki](https://en.bitcoin.it/wiki/Privacy)
 - [BIP-69: Lexicographical Indexing](https://github.com/bitcoin/bips/blob/master/bip-0069.mediawiki)
 - [Mempool.space API](https://mempool.space/docs/api)
 
-## 📄 Licenza
+## 📝 Notes
+
+- Requires access to **Chainalysis Reactor** (account required)
+- Transactions are analyzed respecting API rate limits
+- Results are **probabilistic**, not deterministic
+- Custom or non-standard wallets may be classified as "Other"
+
+## 📄 License
 
 MIT License
 
 ---
 
-**Disclaimer**: Questo tool è fornito solo a scopo educativo e di ricerca. L'uso è sotto la responsabilità dell'utente.
+**Disclaimer**: This tool is provided for educational and research purposes only. Use at your own responsibility.

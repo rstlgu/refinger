@@ -1,0 +1,199 @@
+// Script for the complete analysis page
+
+const ICONS = {
+  chart: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3v18h18" stroke="currentColor" stroke-width="2" fill="none"/><path d="M7 14l4-4 4 4 5-6" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
+  list: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`
+};
+
+// Wallet icon mapping
+const WALLET_ICONS = {
+  'Bitcoin Core': 'bitcoin-core',
+  'Electrum': 'electrum',
+  'Blue Wallet': 'bluewallet',
+  'Coinbase Wallet': 'coinbase',
+  'Exodus Wallet': 'exodus',
+  'Trust Wallet': 'trust',
+  'Trezor': 'trezor',
+  'Ledger': 'ledger',
+  'Unclear': 'unclear',
+  'Other': 'other'
+};
+
+let currentLang = 'en';
+
+function t(key) {
+  return translations[currentLang]?.[key] || translations['en'][key] || key;
+}
+
+// Truncate address in the middle: bc1qgt2...678703l
+function truncateAddress(address, startChars = 8, endChars = 8) {
+  if (!address || address.length <= startChars + endChars + 3) return address;
+  return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
+}
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (translations[lang]?.[key]) {
+      el.innerHTML = translations[lang][key];
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const contentDiv = document.getElementById('content');
+  const clusterInfo = document.getElementById('cluster-info');
+  const themeBtn = document.getElementById('theme-btn');
+  const closeBtn = document.getElementById('close-btn');
+  const docsBtn = document.getElementById('docs-btn');
+  
+  // Load settings
+  const settings = await chrome.storage.sync.get({ theme: 'light', lang: 'en' });
+  currentLang = settings.lang;
+  
+  if (settings.theme === 'dark') {
+    document.body.classList.add('dark');
+  }
+  
+  applyLanguage(settings.lang);
+  
+  // Toggle theme
+  themeBtn.addEventListener('click', async () => {
+    const isDark = document.body.classList.toggle('dark');
+    await chrome.storage.sync.set({ theme: isDark ? 'dark' : 'light' });
+  });
+  
+  // Open documentation
+  docsBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('docs.html') });
+  });
+  
+  // Close
+  closeBtn.addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      chrome.tabs.remove(tab.id);
+    }
+  });
+  
+  // Get analysis data
+  try {
+    const data = await chrome.runtime.sendMessage({ type: 'GET_ANALYSIS_DATA' });
+    
+    if (!data || !data.results) {
+      contentDiv.innerHTML = `
+        <div class="error-message">
+          <p style="font-weight: 600; margin-bottom: 10px;">${t('noAnalysisData')}</p>
+          <p style="opacity: 0.8;">${t('goToChainalysis')}</p>
+        </div>
+      `;
+      return;
+    }
+    
+    displayAnalysis(data);
+    
+  } catch (error) {
+    contentDiv.innerHTML = `
+      <div class="error-message">
+        <p>Error: ${error.message}</p>
+      </div>
+    `;
+  }
+  
+  function displayAnalysis(data) {
+    const { results, cluster, transfers } = data;
+    
+    // Show cluster info
+    clusterInfo.style.display = 'block';
+    document.getElementById('cluster-address').textContent = truncateAddress(cluster, 8, 8) || 'Unknown cluster';
+    document.getElementById('cluster-address').title = cluster; // Full address on hover
+    document.getElementById('tx-count').textContent = results.transactions.length;
+    document.getElementById('wallet-count').textContent = Object.keys(results.wallets).length;
+    document.getElementById('error-count').textContent = results.errors.length;
+    
+    // Calculate percentages
+    const total = Object.values(results.wallets).reduce((a, b) => a + b, 0);
+    const percentages = Object.entries(results.wallets)
+      .map(([wallet, count]) => ({
+        wallet,
+        count,
+        percentage: ((count / total) * 100).toFixed(1)
+      }))
+      .sort((a, b) => b.count - a.count);
+    
+    // Render content
+    contentDiv.innerHTML = `
+      <div class="results-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-icon">${ICONS.chart}</span>
+            <span class="card-title">${t('walletSummary')}</span>
+          </div>
+          <div class="card-body">
+            <div class="wallet-list">
+              ${percentages.map(p => `
+                <div class="wallet-item">
+                  <span class="wallet-name">
+                    <img src="${chrome.runtime.getURL('icons/wallets/' + WALLET_ICONS[p.wallet] + '.png')}" 
+                         class="wallet-icon" 
+                         onerror="this.style.display='none'"
+                         alt="">
+                    ${p.wallet}
+                  </span>
+                  <span class="wallet-percentage">${p.percentage}%</span>
+                  <div class="wallet-bar" style="width: ${p.percentage}%"></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div class="card transactions-card">
+          <div class="card-header">
+            <span class="card-icon">${ICONS.list}</span>
+            <span class="card-title">${t('transactionDetail')} (${results.transactions.length})</span>
+          </div>
+          <div class="card-body">
+            ${results.transactions.map(tx => `
+              <div class="tx-item">
+                <div class="tx-header">
+                  <a href="https://mempool.space/tx/${tx.hash}" target="_blank" class="tx-hash">
+                    ${tx.hash}
+                  </a>
+                  <span class="tx-wallet">${tx.wallet}</span>
+                </div>
+                <div class="tx-features">
+                  ${tx.reasoning.map(r => `
+                    <span class="feature-tag ${getFeatureClass(r)}">${r}</span>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+            
+            ${results.errors.length > 0 ? `
+              <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                <div style="font-size: 14px; font-weight: 600; color: #dc2626; margin-bottom: 14px;">${t('errors')} (${results.errors.length})</div>
+                ${results.errors.map(err => `
+                  <div class="tx-item" style="background: rgba(239, 68, 68, 0.08);">
+                    <span class="tx-hash" style="color: #dc2626;">${err.hash.substring(0, 24)}...</span>
+                    <span style="color: #dc2626; font-size: 13px;">${err.error}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  function getFeatureClass(feature) {
+    const positive = ['Anti-fee-sniping', 'All compressed public keys', 'Low r signatures only', 'Signals RBF', 'BIP-69 outputs'];
+    const negative = ['No Anti-fee-sniping', 'Uncompressed public key(s)', 'Not low-r-grinding', 'Does not signal RBF', 'Address reuse', 'Not BIP-69 outputs'];
+    
+    if (positive.some(p => feature.includes(p))) return 'positive';
+    if (negative.some(n => feature.includes(n))) return 'negative';
+    return '';
+  }
+});

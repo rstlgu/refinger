@@ -1,42 +1,73 @@
-// Popup script per l'estensione BTC Wallet Fingerprint
+// Popup script for Fingerprint Companion extension
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const statusText = document.getElementById('status-text');
-  const txCount = document.getElementById('tx-count');
-  const analyzeBtn = document.getElementById('analyze-btn');
+  const themeSelect = document.getElementById('theme-select');
+  const langSelect = document.getElementById('lang-select');
+  const docsLink = document.getElementById('open-docs');
   
-  // Ottieni il tab corrente
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  // Load saved settings (default: english, light theme)
+  const settings = await chrome.storage.sync.get({ theme: 'light', lang: 'en' });
   
-  // Controlla se siamo su Chainalysis
-  if (tab.url && tab.url.includes('chainalysis.com')) {
-    statusText.textContent = 'Connesso a Chainalysis';
-    analyzeBtn.textContent = 'Apri pannello analisi';
-    analyzeBtn.disabled = false;
+  // Apply theme
+  if (settings.theme === 'dark') {
+    document.body.classList.add('dark');
+  }
+  themeSelect.value = settings.theme;
+  
+  // Apply language
+  langSelect.value = settings.lang;
+  applyLanguage(settings.lang);
+  
+  // Theme change
+  themeSelect.addEventListener('change', async () => {
+    const theme = themeSelect.value;
+    document.body.classList.toggle('dark', theme === 'dark');
+    await chrome.storage.sync.set({ theme });
     
-    // Ottieni le transazioni intercettate
-    chrome.runtime.sendMessage({ type: 'GET_TRANSACTIONS', tabId: tab.id }, (data) => {
-      if (data && data.hashes) {
-        txCount.textContent = data.hashes.length;
-        statusText.textContent = 'Transazioni pronte per l\'analisi';
+    // Notify content script
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'SETTINGS_CHANGED', settings: { theme } });
+      } catch (e) {}
+    }
+  });
+  
+  // Language change
+  langSelect.addEventListener('change', async () => {
+    const lang = langSelect.value;
+    await chrome.storage.sync.set({ lang });
+    applyLanguage(lang);
+    
+    // Notify content script
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'SETTINGS_CHANGED', settings: { lang } });
+      } catch (e) {}
+    }
+  });
+  
+  // Open documentation
+  docsLink.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('docs.html') });
+  });
+  
+  // Apply language to all elements with data-i18n attribute
+  function applyLanguage(lang) {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (translations[lang]?.[key]) {
+        el.innerHTML = translations[lang][key];
       }
     });
     
-    analyzeBtn.addEventListener('click', async () => {
-      // Invia messaggio al content script per aprire il pannello
-      await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' });
-      window.close();
-    });
-    
-  } else {
-    statusText.textContent = 'Vai su Chainalysis Reactor per iniziare';
-    analyzeBtn.textContent = 'Apri Chainalysis';
-    analyzeBtn.disabled = false;
-    
-    analyzeBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://reactor.chainalysis.com' });
-      window.close();
+    // Update select options
+    document.querySelectorAll('[data-i18n-value]').forEach(el => {
+      const key = el.getAttribute('data-i18n-value');
+      if (translations[lang]?.[key]) {
+        el.textContent = translations[lang][key];
+      }
     });
   }
 });
-

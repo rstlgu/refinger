@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BTC Wallet Fingerprint</title>
+  <title>Fingerprint Companion</title>
   <style>
     * {
       margin: 0;
@@ -11,37 +11,61 @@
       box-sizing: border-box;
     }
     
+    :root {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-accent: rgba(247, 147, 26, 0.06);
+      --text-primary: #1a1a2e;
+      --text-secondary: #4a4a68;
+      --text-muted: #8e8ea0;
+      --border-color: rgba(26, 26, 46, 0.1);
+      --accent: #f7931a;
+      --accent-dark: #e8850f;
+    }
+    
+    body.dark {
+      --bg-primary: #13131a;
+      --bg-secondary: #1a1a24;
+      --bg-accent: rgba(247, 147, 26, 0.08);
+      --text-primary: #f0f0f5;
+      --text-secondary: #b0b0c0;
+      --text-muted: #6a6a7a;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+    
     body {
       width: 320px;
-      min-height: 200px;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 100%);
-      color: #fff;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       padding: 20px;
     }
     
     .header {
       display: flex;
       align-items: center;
+      gap: 14px;
       margin-bottom: 20px;
       padding-bottom: 16px;
-      border-bottom: 1px solid rgba(247, 147, 26, 0.2);
+      border-bottom: 1px solid var(--border-color);
     }
     
-    .logo {
-      font-size: 32px;
-      margin-right: 12px;
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      fill: var(--accent);
     }
     
-    .title {
+    .header-text .title {
       font-size: 16px;
       font-weight: 700;
-      color: #f7931a;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
     }
     
-    .subtitle {
+    .header-text .subtitle {
       font-size: 11px;
-      color: #888;
+      color: var(--text-muted);
       margin-top: 2px;
     }
     
@@ -50,156 +74,260 @@
     }
     
     .section-title {
-      font-size: 11px;
-      color: #666;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-    }
-    
-    .status-box {
-      background: rgba(247, 147, 26, 0.1);
-      border: 1px solid rgba(247, 147, 26, 0.2);
-      border-radius: 10px;
-      padding: 14px;
-      text-align: center;
-    }
-    
-    .status-text {
-      font-size: 13px;
-      color: #ccc;
-    }
-    
-    .status-count {
-      font-size: 28px;
-      font-weight: 700;
-      color: #f7931a;
-      margin: 8px 0;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
     }
     
     .instructions {
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 10px;
-      padding: 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
     }
     
-    .instructions ol {
-      padding-left: 18px;
+    .instruction-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .instruction-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .instruction-number {
+      width: 22px;
+      height: 22px;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    
+    .instruction-text {
       font-size: 12px;
-      color: #aaa;
-      line-height: 1.8;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      padding-top: 2px;
     }
     
-    .instructions li {
-      margin-bottom: 4px;
+    .instruction-text strong {
+      color: var(--text-primary);
+    }
+    
+    .wallets-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    
+    .wallet-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 6px;
+      text-align: center;
+      font-size: 9px;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .wallet-item:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    .wallet-item img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+    
+    .docs-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px;
+      background: var(--bg-accent);
+      border-radius: 8px;
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .docs-link:hover {
+      background: var(--accent);
+      color: white;
+    }
+    
+    .docs-link svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .settings-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .settings-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .settings-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .settings-icon {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-muted);
+    }
+    
+    .settings-select {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 11px;
+      cursor: pointer;
     }
     
     .footer {
       margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
       text-align: center;
       font-size: 10px;
-      color: #555;
+      color: var(--text-muted);
     }
     
     .footer a {
-      color: #f7931a;
+      color: var(--accent);
       text-decoration: none;
     }
     
     .footer a:hover {
       text-decoration: underline;
     }
-    
-    .analyze-btn {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #f7931a 0%, #ff6b00 100%);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 12px;
-      transition: all 0.3s;
-    }
-    
-    .analyze-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(247, 147, 26, 0.4);
-    }
-    
-    .analyze-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .wallets-supported {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    
-    .wallet-tag {
-      font-size: 10px;
-      padding: 4px 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 4px;
-      color: #888;
-    }
   </style>
 </head>
 <body>
   <div class="header">
-    <span class="logo">🔍</span>
-    <div>
-      <div class="title">BTC Wallet Fingerprint</div>
-      <div class="subtitle">Analisi transazioni Bitcoin</div>
+    <svg class="logo-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28zM3.5 9.72c-.1 0-.2-.03-.29-.09-.23-.16-.28-.47-.12-.7.99-1.4 2.25-2.5 3.75-3.27C9.98 4.04 14 4.03 17.15 5.65c1.5.77 2.76 1.86 3.75 3.25.16.22.11.54-.12.7-.23.16-.54.11-.7-.12-.9-1.26-2.04-2.25-3.39-2.94-2.87-1.47-6.54-1.47-9.4.01-1.36.7-2.5 1.7-3.4 2.96-.08.14-.23.21-.39.21zm6.25 12.07c-.13 0-.26-.05-.35-.15-.87-.87-1.34-1.43-2.01-2.64-.69-1.23-1.05-2.73-1.05-4.34 0-2.97 2.54-5.39 5.66-5.39s5.66 2.42 5.66 5.39c0 .28-.22.5-.5.5s-.5-.22-.5-.5c0-2.42-2.09-4.39-4.66-4.39-2.57 0-4.66 1.97-4.66 4.39 0 1.44.32 2.77.93 3.85.64 1.15 1.08 1.64 1.85 2.42.19.2.19.51 0 .71-.11.1-.24.15-.37.15zm7.17-1.85c-1.19 0-2.24-.3-3.1-.89-1.49-1.01-2.38-2.65-2.38-4.39 0-.28.22-.5.5-.5s.5.22.5.5c0 1.41.72 2.74 1.94 3.56.71.48 1.54.71 2.54.71.24 0 .64-.03 1.04-.1.27-.05.53.13.58.41.05.27-.13.53-.41.58-.57.11-1.07.12-1.21.12zM14.91 22c-.04 0-.09-.01-.13-.02-1.59-.44-2.63-1.03-3.72-2.1-1.4-1.39-2.17-3.24-2.17-5.22 0-1.62 1.38-2.94 3.08-2.94 1.7 0 3.08 1.32 3.08 2.94 0 1.07.93 1.94 2.08 1.94s2.08-.87 2.08-1.94c0-3.77-3.25-6.83-7.25-6.83-2.84 0-5.44 1.58-6.61 4.03-.39.81-.59 1.76-.59 2.8 0 .78.07 2.01.67 3.61.1.26-.03.55-.29.64-.26.1-.55-.04-.64-.29-.49-1.31-.73-2.61-.73-3.96 0-1.2.23-2.29.68-3.24 1.33-2.79 4.28-4.6 7.51-4.6 4.55 0 8.25 3.51 8.25 7.83 0 1.62-1.38 2.94-3.08 2.94s-3.08-1.32-3.08-2.94c0-1.07-.93-1.94-2.08-1.94s-2.08.87-2.08 1.94c0 1.71.66 3.31 1.87 4.51.95.94 1.86 1.46 3.27 1.85.27.07.42.35.35.61-.05.23-.26.38-.48.38z"/>
+    </svg>
+    <div class="header-text">
+      <div class="title">Fingerprint Companion</div>
+      <div class="subtitle" data-i18n="subtitle">Bitcoin Wallet Identification</div>
     </div>
   </div>
   
   <div class="section">
-    <div class="section-title">Stato</div>
-    <div class="status-box">
-      <div class="status-text" id="status-text">Nessuna transazione intercettata</div>
-      <div class="status-count" id="tx-count">0</div>
-      <div class="status-text">transazioni</div>
-    </div>
-    <button class="analyze-btn" id="analyze-btn" disabled>Analizza su Chainalysis</button>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">Come usare</div>
+    <div class="section-title" data-i18n="howItWorks">How it works</div>
     <div class="instructions">
-      <ol>
-        <li>Apri <strong>Chainalysis Reactor</strong></li>
-        <li>Clicca su un'entità o indirizzo</li>
-        <li>Le transazioni verranno intercettate automaticamente</li>
-        <li>Clicca il pulsante 🔍 sulla pagina per analizzare</li>
-      </ol>
+      <div class="instruction-item">
+        <span class="instruction-number">1</span>
+        <span class="instruction-text" data-i18n="step1">Open <strong>Chainalysis Reactor</strong> and select a Bitcoin cluster</span>
+      </div>
+      <div class="instruction-item">
+        <span class="instruction-number">2</span>
+        <span class="instruction-text" data-i18n="step2">Outgoing transactions are automatically intercepted</span>
+      </div>
+      <div class="instruction-item">
+        <span class="instruction-number">3</span>
+        <span class="instruction-text" data-i18n="step3">Click the <strong>fingerprint button</strong> at the bottom left of the page</span>
+      </div>
+      <div class="instruction-item">
+        <span class="instruction-number">4</span>
+        <span class="instruction-text" data-i18n="step4">Press <strong>Analyze Fingerprint</strong> to identify the wallet</span>
+      </div>
     </div>
   </div>
   
   <div class="section">
-    <div class="section-title">Wallet supportati</div>
-    <div class="wallets-supported">
-      <span class="wallet-tag">Bitcoin Core</span>
-      <span class="wallet-tag">Electrum</span>
-      <span class="wallet-tag">Blue Wallet</span>
-      <span class="wallet-tag">Coinbase</span>
-      <span class="wallet-tag">Exodus</span>
-      <span class="wallet-tag">Trust</span>
-      <span class="wallet-tag">Trezor</span>
-      <span class="wallet-tag">Ledger</span>
+    <div class="section-title" data-i18n="detectableWallets">Detectable Wallets</div>
+    <div class="wallets-grid">
+      <div class="wallet-item"><img src="icons/wallets/bitcoin-core.png" alt="">Bitcoin Core</div>
+      <div class="wallet-item"><img src="icons/wallets/electrum.png" alt="">Electrum</div>
+      <div class="wallet-item"><img src="icons/wallets/bluewallet.png" alt="">Blue Wallet</div>
+      <div class="wallet-item"><img src="icons/wallets/coinbase.png" alt="">Coinbase</div>
+      <div class="wallet-item"><img src="icons/wallets/exodus.png" alt="">Exodus</div>
+      <div class="wallet-item"><img src="icons/wallets/trust.png" alt="">Trust</div>
+      <div class="wallet-item"><img src="icons/wallets/trezor.png" alt="">Trezor</div>
+      <div class="wallet-item"><img src="icons/wallets/ledger.png" alt="">Ledger</div>
+    </div>
+    <a class="docs-link" id="open-docs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>
+      <span data-i18n="fullDocs">Full Documentation</span>
+    </a>
+  </div>
+  
+  <div class="settings-section">
+    <div class="settings-row">
+      <span class="settings-label">
+        <svg class="settings-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span data-i18n="theme">Theme</span>
+      </span>
+      <select class="settings-select" id="theme-select">
+        <option value="light" data-i18n-value="themeLight">Light</option>
+        <option value="dark" data-i18n-value="themeDark">Dark</option>
+      </select>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">
+        <svg class="settings-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-i18n="language">Language</span>
+      </span>
+      <select class="settings-select" id="lang-select">
+        <option value="en">English</option>
+        <option value="it">Italiano</option>
+      </select>
     </div>
   </div>
   
   <div class="footer">
-    Powered by <a href="https://mempool.space" target="_blank">mempool.space</a> API
+    <span data-i18n="poweredBy">Powered by</span> <a href="https://mempool.space" target="_blank">mempool.space</a> API
   </div>
   
+  <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
-

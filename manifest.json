@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Bitcoin Wallet Fingerprint",
-  "version": "1.0.0",
+  "name": "Fingerprint Companion (for Chainalysis)",
+  "version": "1.4.0",
   "description": "Analizza le transazioni Bitcoin per identificare il wallet utilizzato",
   "permissions": [
     "activeTab",
     "storage",
-    "webRequest"
+    "tabs"
   ],
   "host_permissions": [
     "https://reactor.chainalysis.com/*",
@@ -18,9 +18,18 @@
   "content_scripts": [
     {
       "matches": ["https://reactor.chainalysis.com/*"],
-      "js": ["content.js"],
+      "js": ["i18n.js", "content.js"],
       "css": ["styles.css"],
-      "run_at": "document_end"
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "injected.js",
+        "icons/wallets/*.png"
+      ],
+      "matches": ["https://reactor.chainalysis.com/*"]
     }
   ],
   "action": {
@@ -37,4 +46,3 @@
     "128": "icons/icon128.png"
   }
 }
-

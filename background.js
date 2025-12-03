@@ -2,6 +2,28 @@
 
 // Memorizza le transazioni intercettate
 let interceptedTransactions = new Map();
+let analysisData = null;
+
+// Cache per le transazioni già analizzate (per evitare richieste duplicate)
+const TX_CACHE_KEY = 'btc_fp_tx_cache';
+
+// Carica la cache all'avvio
+let txCache = {};
+chrome.storage.local.get(TX_CACHE_KEY, (data) => {
+  txCache = data[TX_CACHE_KEY] || {};
+  console.log('[BTC Fingerprint] Cache caricata:', Object.keys(txCache).length, 'transazioni');
+});
+
+// Salva cache periodicamente
+function saveCache() {
+  // Limita la cache a 500 transazioni (FIFO)
+  const keys = Object.keys(txCache);
+  if (keys.length > 500) {
+    const toRemove = keys.slice(0, keys.length - 500);
+    toRemove.forEach(k => delete txCache[k]);
+  }
+  chrome.storage.local.set({ [TX_CACHE_KEY]: txCache });
+}
 
 // Ascolta i messaggi dal content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -34,11 +56,71 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse(data || null);
   }
   
+  if (request.type === 'CLEAR_TRANSACTIONS') {
+    const tabId = sender.tab?.id || request.tabId;
+    interceptedTransactions.delete(tabId);
+    sendResponse({ success: true });
+  }
+  
+  if (request.type === 'SAVE_ANALYSIS_DATA') {
+    analysisData = request.data;
+    // Salva in storage: sia con chiave cluster che come "current" per la full analysis page
+    const saveData = { current_analysis: request.data };
+    if (request.data.cluster) {
+      saveData[`analysis_${request.data.cluster}`] = request.data;
+    }
+    chrome.storage.local.set(saveData).catch(err => {
+      console.error('[Fingerprint Companion] Error saving analysis to storage:', err);
+    });
+    sendResponse({ success: true });
+  }
+  
+  if (request.type === 'GET_ANALYSIS_DATA') {
+    // Prima prova dalla memoria, poi dallo storage
+    if (analysisData) {
+      sendResponse(analysisData);
+    } else {
+      chrome.storage.local.get('current_analysis', (data) => {
+        sendResponse(data.current_analysis || null);
+      });
+      return true; // Async response
+    }
+  }
+  
+  if (request.type === 'GET_CACHED_ANALYSIS') {
+    // Recupera analisi salvata per questo cluster
+    const key = `analysis_${request.cluster}`;
+    chrome.storage.local.get(key, (data) => {
+      sendResponse(data[key] || null);
+    });
+    return true; // Async response
+  }
+  
+  if (request.type === 'CLEAR_ANALYSIS_DATA') {
+    analysisData = null;
+    sendResponse({ success: true });
+  }
+  
+  if (request.type === 'OPEN_FULL_ANALYSIS') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('analysis.html') });
+    sendResponse({ success: true });
+  }
+  
   if (request.type === 'ANALYZE_WALLET') {
     analyzeWallet(request.hashes).then(results => {
       sendResponse(results);
     });
     return true; // Mantiene il canale aperto per risposta asincrona
+  }
+  
+  if (request.type === 'CLEAR_CACHE') {
+    txCache = {};
+    chrome.storage.local.remove(TX_CACHE_KEY);
+    sendResponse({ success: true });
+  }
+  
+  if (request.type === 'GET_CACHE_SIZE') {
+    sendResponse({ size: Object.keys(txCache).length });
   }
   
   return true;
@@ -49,13 +131,24 @@ async function analyzeWallet(hashes) {
   const results = {
     wallets: {},
     transactions: [],
-    errors: []
+    errors: [],
+    cached: 0
   };
   
   for (const hash of hashes) {
     try {
+      // Controlla se abbiamo già questa transazione in cache
+      let analysis;
+      if (txCache[hash]) {
+        analysis = txCache[hash];
+        results.cached++;
+      } else {
       const txData = await fetchTransaction(hash);
-      const analysis = detectWallet(txData);
+        analysis = detectWallet(txData);
+        
+        // Salva in cache
+        txCache[hash] = analysis;
+      }
       
       results.transactions.push({
         hash: hash,
@@ -73,6 +166,11 @@ async function analyzeWallet(hashes) {
       results.errors.push({ hash, error: error.message });
     }
   }
+  
+  // Salva la cache aggiornata
+  saveCache();
+  
+  console.log('[BTC Fingerprint] Analisi completata:', results.transactions.length, 'tx,', results.cached, 'from cache');
   
   return results;
 }
@@ -422,4 +520,3 @@ function detectWallet(tx) {
   
   return { wallet, reasoning };
 }
-
