@@ -5,6 +5,9 @@
   
   if (window.__btcFingerprintInjected) return;
   window.__btcFingerprintInjected = true;
+  if (typeof window.__btcFingerprintEnabled === 'undefined') {
+    window.__btcFingerprintEnabled = true;
+  }
   
   console.log('[BTC Fingerprint] 🚀 Main world script loaded');
   
@@ -32,6 +35,7 @@
     
     // Intercetta solo le richieste /transfers per Bitcoin
     if (urlString.includes('/transfers') && urlString.includes('bip122:000000000019d6689c085ae165831e93')) {
+      if (!window.__btcFingerprintEnabled) return response;
       try {
         const clonedResponse = response.clone();
         const data = await clonedResponse.json();
@@ -76,6 +80,7 @@
       const urlString = xhr._btcFpUrl?.toString() || '';
       
       if (urlString.includes('/transfers') && urlString.includes('bip122:000000000019d6689c085ae165831e93')) {
+        if (!window.__btcFingerprintEnabled) return;
         try {
           const data = JSON.parse(xhr.responseText);
           

@@ -15,6 +15,7 @@ const translations = {
     language: 'Language',
     themeLight: 'Light',
     themeDark: 'Dark',
+    disableNow: 'Disable for now',
     
     // Content script
     noWallet: 'No wallet',
@@ -132,6 +133,7 @@ const translations = {
     language: 'Lingua',
     themeLight: 'Chiaro',
     themeDark: 'Scuro',
+    disableNow: 'Disabilita per ora',
     
     // Content script
     noWallet: 'Nessun wallet',

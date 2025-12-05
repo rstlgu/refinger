@@ -87,18 +87,28 @@
   let currentCluster = null;
   let walletAddress = null;
   let transactionCount = 0;
-  let settings = { theme: 'light', lang: 'en' };
+  let settings = { theme: 'light', lang: 'en', enabled: true };
   let isAnalyzing = false;
   let cachedResults = null; // Store analysis results
   let dominantWallet = null; // Store dominant wallet for button icon
+  let scriptInjected = false;
+  let uiInitialized = false;
   
   // Auto-analyze threshold
   const AUTO_ANALYZE_THRESHOLD = 50;
   
   // Load settings
-  chrome.storage.sync.get({ theme: 'light', lang: 'en' }, (s) => {
+  chrome.storage.sync.get({ theme: 'light', lang: 'en', enabled: true }, (s) => {
     settings = s;
     applyTheme(settings.theme);
+    window.__btcFingerprintEnabled = settings.enabled;
+    
+    const boot = () => setExtensionEnabled(settings.enabled);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot, { once: true });
+    } else {
+      boot();
+    }
   });
   
   // Inject script into main world
@@ -124,9 +134,43 @@
         (document.head || document.documentElement).appendChild(script);
       });
     }
+    
+    scriptInjected = true;
   }
   
-  injectScript();
+  function ensureInjected() {
+    if (scriptInjected || !settings.enabled) return;
+    injectScript();
+  }
+  
+  function initUIOnce() {
+    if (uiInitialized) return;
+    initUI();
+    uiInitialized = true;
+  }
+  
+  function setExtensionEnabled(enabled) {
+    settings.enabled = enabled;
+    window.__btcFingerprintEnabled = enabled;
+    initUIOnce();
+    
+    const container = document.getElementById('btc-fingerprint-floating');
+    const panel = document.getElementById('btc-fingerprint-panel');
+    
+    if (container) {
+      container.style.display = enabled ? 'block' : 'none';
+    }
+    
+    if (!enabled) {
+      clearAll();
+      if (panel) panel.classList.add('btc-fp-hidden');
+      return;
+    }
+    
+    ensureInjected();
+    updateButtonContent(transactionCount, null);
+    updateUI();
+  }
   
   // Apply theme
   function applyTheme(theme) {
@@ -142,6 +186,7 @@
     if (event.source !== window) return;
     
     if (event.data && event.data.type === 'BTC_FINGERPRINT_TRANSFERS') {
+      if (!settings.enabled) return;
       const transfers = event.data.data;
       const newWalletAddress = event.data.walletAddress;
       
@@ -199,6 +244,7 @@
   
   // Background analysis (no UI changes, just updates button content)
   async function startBackgroundAnalysis() {
+    if (!settings.enabled) return;
     if (isAnalyzing || cachedResults) {
       console.log('[Reactor Fingerprint Companion] ⏭️ Skipping analysis - already analyzing or cached');
       return;
@@ -319,6 +365,16 @@
     const headerAddress = document.getElementById('btc-fp-header-address');
     const txCountEl = document.getElementById('btc-fp-tx-captured');
     const analyzeBtn = document.getElementById('btc-fp-analyze');
+    
+    if (!settings.enabled) {
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.remove('has-info');
+      }
+      if (headerAddress) headerAddress.textContent = t('noWallet');
+      if (txCountEl) txCountEl.textContent = t('waitingTx');
+      return;
+    }
     
     if (transactionCount > 0) {
       if (btn) btn.disabled = false;
@@ -602,6 +658,7 @@
   
   // Manual analysis for > 50 transactions
   async function startManualAnalysis() {
+    if (!settings.enabled) return;
     if (isAnalyzing) return;
     isAnalyzing = true;
     
@@ -821,16 +878,23 @@
           if (analyzeBtn) analyzeBtn.textContent = t('analyzeFingerprint');
         }
       }
+      if (request.settings.enabled !== undefined) {
+        setExtensionEnabled(request.settings.enabled);
+      }
     }
     
     return true;
   });
   
-  // Initialize
+  // Initialize UI (fallback in case storage is slow)
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initUI);
+    document.addEventListener('DOMContentLoaded', () => {
+      initUIOnce();
+      ensureInjected();
+    });
   } else {
-    initUI();
+    initUIOnce();
+    ensureInjected();
   }
   
   console.log('[Reactor Fingerprint Companion] ✅ Content script loaded');
