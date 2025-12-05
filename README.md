@@ -4,18 +4,18 @@ A Chrome extension that intercepts Bitcoin transactions displayed on **Chainalys
 
 ![Extension demo](images/demo.gif)
 
-## ✨ Features
+## Features
 
-- 🔄 **Automatic interception** of transactions from Chainalysis API
-- 🔍 **One-click analysis** directly on the page
-- 📊 **Percentage visualization** of identified wallets
-- 🔗 **Links to mempool.space** for each transaction
-- 🎨 **Modern UI** with light/dark themes
-- 🌍 **Multi-language support** (English & Italian)
-- 💾 **Smart caching** to avoid duplicate API requests
-- 📈 **Full analysis page** with detailed transaction breakdown
+- **Automatic interception** of transactions from Chainalysis API
+- **One-click analysis** directly on the page
+- **Percentage visualization** of identified wallets
+- **Links to mempool.space** for each transaction
+- **Modern UI** with light/dark themes
+- **Multi-language support** (English & Italian)
+- **Smart caching** to avoid duplicate API requests
+- **Full analysis page** with detailed transaction breakdown
 
-## 🚀 Installation
+## Installation
 
 ### Chrome / Brave / Edge
 
@@ -37,7 +37,7 @@ A Chrome extension that intercepts Bitcoin transactions displayed on **Chainalys
 
 6. The extension will appear in your toolbar with a fingerprint icon
 
-## 📖 How to Use
+## How to Use
 
 1. **Access Chainalysis Reactor** (`reactor.chainalysis.com`)
 
@@ -54,7 +54,7 @@ A Chrome extension that intercepts Bitcoin transactions displayed on **Chainalys
 
 7. View **results** with wallet percentages and detailed reasoning
 
-## 🔬 How It Works
+## How It Works
 
 ### Interception
 
@@ -84,7 +84,7 @@ For each transaction hash:
 | **Address reuse** | Change sent to previously used address |
 | **Change position** | First, last, or random output index |
 
-## 🎯 Supported Wallets
+## Supported Wallets
 
 | Wallet | Key Characteristics |
 |--------|---------------------|
@@ -98,7 +98,7 @@ For each transaction hash:
 | **Ledger** | nVersion=1, RBF, change last |
 
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 refinger/
@@ -116,7 +116,7 @@ refinger/
 └── README.md          # Documentation
 ```
 
-## ⚠️ Privacy & Security
+## Privacy & Security
 
 - ✅ **No data sent** to external servers (except mempool.space for transaction data)
 - ✅ All analysis happens **locally** in the browser
@@ -124,7 +124,7 @@ refinger/
 - ✅ Extension works **only** on `reactor.chainalysis.com`
 - ✅ **Open source** and auditable code
 
-## 🐛 Debugging
+## Debugging
 
 Open developer console (F12) on Chainalysis to see logs:
 ```
@@ -137,7 +137,7 @@ For background script debugging:
 2. Find the extension
 3. Click "Service worker" to open DevTools
 
-## 📚 Sources & References
+## Sources & References
 
 This extension is based on the excellent research by **Ishaana**:
 
@@ -154,14 +154,14 @@ This extension is based on the excellent research by **Ishaana**:
 - [BIP-69: Lexicographical Indexing](https://github.com/bitcoin/bips/blob/master/bip-0069.mediawiki)
 - [Mempool.space API](https://mempool.space/docs/api)
 
-## 📝 Notes
+## Notes
 
 - Requires access to **Chainalysis Reactor** (account required)
 - Transactions are analyzed respecting API rate limits
 - Results are **probabilistic**, not deterministic
 - Custom or non-standard wallets may be classified as "Other"
 
-## 📄 License
+## License
 
 MIT License
 
